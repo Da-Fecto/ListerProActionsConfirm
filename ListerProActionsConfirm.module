@@ -1,0 +1,125 @@
+<?php namespace ProcessWire;
+
+/**
+ * Confirm Actions for ProcessPageListerPro
+ *
+ * Copyright 2015 by Martijn Geerts
+ *
+ * ProcessWire 2.x
+ * Copyright (C) 2014 by Ryan Cramer
+ * Licensed under GNU/GPL v2, see LICENSE.TXT
+ *
+ * http://processwire.com
+ *
+ */
+
+class ListerProActionsConfirm extends Process {
+
+	/**
+	 * Module info
+	 *
+	 * @return array Associative array with module information
+	 *
+	 */
+	public static function getModuleInfo() {
+		return array(
+			'title' => 'Confirm Actions',
+			'summary' => __("Confirm Actions for ProcessPageListerPro"),
+			'version' => 1,
+			'author' => 'Martijn Geerts',
+			'icon' => 'check',
+			'singular' => true,
+			'autoload' => true,
+			'permission' => 'page-lister',
+			'page' => array(
+				'title' => __("Execute Confirm"),
+				'name' => 'execute-confirm',
+				'parent' => 'setup',
+			)
+			);
+	}
+
+	// @var Page $endPoint Ajax endpoint
+	private $endPoint = null;
+
+
+	/**
+	 * Get the page where this module lives.
+	 *
+	 */
+	public function init() {
+		parent::init();
+
+		$moduleID = $this->wire('modules')->getModuleID($this);
+		$this->endPoint = $this->pages->get("template=admin, process=$moduleID, include=all");
+
+
+		$this->addHookAfter('ProcessPageLister::findResults', $this, 'afterFindResults');
+		$this->addHookAfter('ListerProActions::buildActionsForm', $this, 'afterBuildActions');
+	}
+
+	public function execute() {
+		// Info
+		$info = $this->wire('session')->get($this->className());
+		echo json_encode($info);
+		return;
+	}
+
+	/**
+	 * Get the page where this module lives.
+	 *
+	 */
+	public function afterFindResults(HookEvent $event) {
+		$this->wire('session')->set($this->className(), array(
+			'total' => $event->return->getTotal()
+			));
+	}
+
+	/**
+	 * Catching hook.
+	 *
+	 */
+	public function afterBuildActions(HookEvent $event) {
+
+		// InputfieldForm
+		$form = $event->return;
+		$fields = $form->get('children');
+		$actions = $fields->get('name=actions');
+
+		$applyText = $this->_("Apply action on # articles.");
+
+		$checkbox = $this->wire('modules')->get('InputfieldCheckbox');
+		$checkbox->set('id', 'confirm');
+		$checkbox->set('label', $this->_("Confirm Action"));
+		$checkbox->set('label2', $applyText);
+		$checkbox->set('description', $this->_("In case of an incorrect number of products, please use the Reset Filters button on the right."));
+		$checkbox->set('notes', $this->_("Running actions on more than a few hunderd product(s) may take a while."));
+
+		$form->insertAfter($checkbox, $actions);
+
+		// ListerProActions
+		$listerProActions = $event->object;
+		// ProcessPageListerPro
+		$listerPro = $listerProActions->__get('lister');
+
+
+		/**
+		 * Javascript Part
+		 *
+		 */
+
+		// Info
+		$info = $this->wire('session')->get($this->className());
+
+		$config = $this->wire('config');
+		$script = $config->urls->get($this->className()) . $this->className() . '.js';
+		$config->scripts->add($script);
+
+		$config->js($this->className(), array(
+			'ajax' => $this->endPoint->url,
+			'filter' => $info['total'],
+			'selected' => 0,
+			'checkLabel' => explode('#', $applyText)
+			));
+	}
+}
