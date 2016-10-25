@@ -25,7 +25,7 @@ class ListerProActionsConfirm extends Process {
 		return array(
 			'title' => 'Confirm Actions',
 			'summary' => __("Confirm Actions for ProcessPageListerPro"),
-			'version' => 1,
+			'version' => '0.0.2',
 			'author' => 'Martijn Geerts',
 			'icon' => 'check',
 			'singular' => true,
@@ -35,7 +35,7 @@ class ListerProActionsConfirm extends Process {
 				'title' => __("Execute Confirm"),
 				'name' => 'execute-confirm',
 				'parent' => 'setup',
-			)
+				)
 			);
 	}
 
@@ -52,7 +52,6 @@ class ListerProActionsConfirm extends Process {
 
 		$moduleID = $this->wire('modules')->getModuleID($this);
 		$this->endPoint = $this->pages->get("template=admin, process=$moduleID, include=all");
-
 
 		$this->addHookAfter('ProcessPageLister::findResults', $this, 'afterFindResults');
 		$this->addHookAfter('ListerProActions::buildActionsForm', $this, 'afterBuildActions');
@@ -86,12 +85,14 @@ class ListerProActionsConfirm extends Process {
 		$fields = $form->get('children');
 		$actions = $fields->get('name=actions');
 
+		// Info
+		$info = $this->wire('session')->get($this->className());
 		$applyText = $this->_("Apply action on # articles.");
 
 		$checkbox = $this->wire('modules')->get('InputfieldCheckbox');
 		$checkbox->set('id', 'confirm');
 		$checkbox->set('label', $this->_("Confirm Action"));
-		$checkbox->set('label2', $applyText);
+		$checkbox->set('label2', str_replace('#', $info['total'], $applyText));
 		$checkbox->set('description', $this->_("In case of an incorrect number of products, please use the Reset Filters button on the right."));
 		$checkbox->set('notes', $this->_("Running actions on more than a few hunderd product(s) may take a while."));
 
@@ -102,14 +103,10 @@ class ListerProActionsConfirm extends Process {
 		// ProcessPageListerPro
 		$listerPro = $listerProActions->__get('lister');
 
-
 		/**
 		 * Javascript Part
 		 *
 		 */
-
-		// Info
-		$info = $this->wire('session')->get($this->className());
 
 		$config = $this->wire('config');
 		$script = $config->urls->get($this->className()) . $this->className() . '.js';
@@ -117,9 +114,13 @@ class ListerProActionsConfirm extends Process {
 
 		$config->js($this->className(), array(
 			'ajax' => $this->endPoint->url,
-			'filter' => $info['total'],
+			'total' => $info['total'],
 			'selected' => 0,
-			'checkLabel' => explode('#', $applyText)
+			'text' => array(
+				'checkLabel' => explode('#', $applyText),
+				'abort' => $this->_("You aborted the execution!"),
+				'stop' => $this->_("Stop"),
+				),
 			));
 	}
 }
