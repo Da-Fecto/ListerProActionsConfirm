@@ -14,9 +14,6 @@
 
 	function serverTotal (results) {
 		settings = $.extend(settings, results);
-		console.log(settings);
-
-
 		total = results.total;
 		$checkLabel.text(prefix + settings.total + suffix);
 	}
@@ -40,7 +37,7 @@
 	}
 
 	function uncheckConfirm (event) {
-		$stop = $stop || $("<button class='ui-button ui-widget ui-corner-all ui-state-default' style='margin-left: 0.5em;'><span><i class='fa fa-times'></i> " + settings.text.stop + "</span></button>");
+		$stop = $stop || $("<button class='ui-button ui-widget ui-corner-all ui-state-default' style='margin-left: 0.5em;' id='stop'><span><i class='fa fa-times'></i> " + settings.text.stop + "</span></button>");
 		$stop.insertAfter($submit);
 		$confirm.attr('checked', false);
 		$stop.on('click', stopExecuting);
@@ -59,12 +56,7 @@
 				what = that.value;
 			}
 
-			if (what === "all") {
-				total = settings.total;
-			} else {
-				total = what.split(",").length;
-			}
-
+			total = (what === "all") ? settings.total : what.split(",").length;
 			$checkLabel.text(prefix + total + suffix);
 
 		}, 10);
@@ -79,6 +71,7 @@
 		$checkLabel = $confirm.next(".pw-no-select");
 		$submit = $("#Inputfield_run_action");
 		$submit.hide(0);
+		$("#stop").remove();
 		executeIcon = $('span i', $submit).attr('class');
 		$checkLabel.text(prefix + settings.total + suffix);
 
@@ -104,3 +97,8 @@
 		})
 	};
 }());
+
+
+
+
+
