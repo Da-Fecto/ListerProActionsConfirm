@@ -1,4 +1,4 @@
-var confirmExecute = (function () {
+(function () {
 
 	"use strict";
 
@@ -6,20 +6,44 @@ var confirmExecute = (function () {
 		prefix,
 		suffix,
 		total,
+		executeIcon,
 		$confirm,
 		$checkLabel,
-		$checkHeader,
-		$submit;
+		$submit,
+		$stop;
 
 	function serverTotal (results) {
-		settings = results;
+		settings = $.extend(settings, results);
+		console.log(settings);
+
+
 		total = results.total;
-		$checkLabel.text(prefix + total + suffix);
-		$checkHeader.find(".fa-cog").remove();
+		$checkLabel.text(prefix + settings.total + suffix);
+	}
+
+	function stopExecuting() {
+		$('span i', $submit).attr('class', executeIcon);
+		$submit.removeClass("ui-state-active");
+		$(this).remove();
+		"stop" in window ? window.stop() : document.execCommand("Stop");
+
+		var iframe = document.getElementById('actions_viewport'),
+			$iframeDocument = $('body > pre', iframe.contentDocument || iframe.contentWindow.document),
+			$iframeContent = $(iframe).contents();
+
+		$iframeDocument.append($("<span><br>" + settings.text.abort + "</span>"))
+		$iframeContent.scrollTop($iframeContent.height());
 	}
 
 	function confirmChange() {
 		$submit.toggle(this.checked && total > 0);
+	}
+
+	function uncheckConfirm (event) {
+		$stop = $stop || $("<button class='ui-button ui-widget ui-corner-all ui-state-default' style='margin-left: 0.5em;'><span><i class='fa fa-times'></i> " + settings.text.stop + "</span></button>");
+		$stop.insertAfter($submit);
+		$confirm.attr('checked', false);
+		$stop.on('click', stopExecuting);
 	}
 
 	function changeInput() {
@@ -48,21 +72,21 @@ var confirmExecute = (function () {
 
 	function init() {
 		settings = ProcessWire.config.ListerProActionsConfirm;
-		prefix = settings.checkLabel[0];
-		suffix = settings.checkLabel[1];
+		prefix = settings.text.checkLabel[0];
+		suffix = settings.text.checkLabel[1];
 
 		$confirm = $("#confirm");
 		$checkLabel = $confirm.next(".pw-no-select");
-		$checkHeader = $confirm.closest(".Inputfield").find(".InputfieldHeader");
 		$submit = $("#Inputfield_run_action");
-
 		$submit.hide(0);
-		$checkLabel.text(prefix + settings.filter + suffix);
-		$checkHeader.prepend("<i class='fa fa-cog fa-spin' style='margin: 0.25em;'></i>");
+		executeIcon = $('span i', $submit).attr('class');
+		$checkLabel.text(prefix + settings.total + suffix);
 
+		// events
 		$(".actions_toggle").on("click", changeInput);
 		$("[name='actions_items']").on("change", changeInput);
 		$confirm.on("change", confirmChange);
+		$submit.on("click", uncheckConfirm);
 
 		$.post(settings.ajax, serverTotal, "JSON");
 	}
