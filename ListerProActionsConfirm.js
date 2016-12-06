@@ -28,13 +28,12 @@
 			$iframeDocument = $('body > pre', iframe.contentDocument || iframe.contentWindow.document),
 			$iframeContent = $(iframe).contents();
 
-		$iframeDocument.append($("<span><br>" + settings.text.abort + "</span>"))
+		$iframeDocument.append($("<span><br>" + settings.text.abort + "</span>"));
 		$iframeContent.scrollTop($iframeContent.height());
 	}
 
 	function confirmChange() {
-		$submit.toggle(this.checked && total > 0);
-	}
+		$submit.toggle(this.checked && total > 0);	}
 
 	function uncheckConfirm (event) {
 		$stop = $stop || $("<button class='ui-button ui-widget ui-corner-all ui-state-default' style='margin-left: 0.5em;' id='stop'><span><i class='fa fa-times'></i> " + settings.text.stop + "</span></button>");
@@ -44,12 +43,10 @@
 	}
 
 	function changeInput() {
-
 		var that = this,
 			what;
 
 		setTimeout(function () {
-
 			if (that.nodeName === "A") {
 				what = $("[name='actions_items']:checked").val();
 			} else if (that.nodeName === "INPUT") {
@@ -60,6 +57,17 @@
 			$checkLabel.text(prefix + total + suffix);
 
 		}, 10);
+	}
+
+	/**
+	 * After lister has run, #submit_refresh is clicked from iframe
+	 *
+	 * Then clean up all previous action form values and the actions checkboxes.
+	 *
+	 */
+	function clearActions (event) {
+		$(".Inputfield_actions input").each(function() { this.checked = false; });
+		$("[class*='Inputfield_PageAction'] :input").val('');
 	}
 
 	function init() {
@@ -86,7 +94,6 @@
 
 	return {
 		init: $(function () {
-
 			if (!$("#ProcessLister").length) {
 				return;
 			}
@@ -94,11 +101,9 @@
 			$("#ProcessListerResults").on("loaded", function() {
 				init();
 			});
+
+			// clear actions after listerpro has run
+			$("#submit_refresh").on('click', clearActions);
 		})
 	};
 }());
-
-
-
-
-
